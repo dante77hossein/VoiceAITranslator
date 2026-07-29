@@ -10,7 +10,6 @@ import android.widget.*
 import android.view.Gravity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import java.util.Locale
 
 
 class MainActivity : Activity() {
@@ -41,7 +40,7 @@ class MainActivity : Activity() {
 
         resultText = TextView(this)
 
-        resultText.text = "Speak something..."
+        resultText.text = "فارسی صحبت کنید..."
         resultText.textSize = 20f
         resultText.gravity = Gravity.CENTER
 
@@ -77,7 +76,9 @@ class MainActivity : Activity() {
 
 
         layout.addView(title)
+
         layout.addView(resultText)
+
         layout.addView(button)
 
 
@@ -89,9 +90,11 @@ class MainActivity : Activity() {
 
     private fun startSpeechRecognition(){
 
+
         val intent = Intent(
             RecognizerIntent.ACTION_RECOGNIZE_SPEECH
         )
+
 
         intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE_MODEL,
@@ -99,15 +102,22 @@ class MainActivity : Activity() {
         )
 
 
+        // زبان تشخیص صدا فارسی
         intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE,
-            Locale.getDefault()
+            "fa-IR"
+        )
+
+
+        intent.putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,
+            "fa-IR"
         )
 
 
         intent.putExtra(
             RecognizerIntent.EXTRA_PROMPT,
-            "Speak now..."
+            "فارسی صحبت کنید..."
         )
 
 
@@ -144,7 +154,7 @@ class MainActivity : Activity() {
 
 
             resultText.text =
-                result?.get(0) ?: ""
+                result?.get(0) ?: "تشخیص داده نشد"
 
         }
 
