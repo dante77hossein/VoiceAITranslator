@@ -28,7 +28,7 @@ class TranslationService {
 
 
                 val url =
-                    URL("https://libretranslate.com/translate")
+                    URL("https://translate.argosopentech.com/translate")
 
 
                 val connection =
