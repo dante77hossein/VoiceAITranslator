@@ -1,17 +1,26 @@
 package com.voiceai.translator
 
+import android.Manifest
 import android.app.Activity
 import android.os.Bundle
+import android.content.pm.PackageManager
+import android.media.MediaRecorder
+import android.widget.*
 import android.graphics.Color
 import android.view.Gravity
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+
 
 class MainActivity : Activity() {
 
+
+    private var recorder: MediaRecorder? = null
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
 
         val layout = LinearLayout(this)
 
@@ -19,37 +28,52 @@ class MainActivity : Activity() {
         layout.gravity = Gravity.CENTER
         layout.setPadding(40,40,40,40)
 
+
         val title = TextView(this)
 
         title.text = "🎙 Voice AI Translator"
         title.textSize = 28f
-        title.setTextColor(Color.BLACK)
         title.gravity = Gravity.CENTER
 
 
         val button = Button(this)
 
-        button.text = "Start Translation"
+        button.text = "START TRANSLATION"
 
 
-        layout.addView(
-            title,
-            LinearLayout.LayoutParams(
-                -1,
-                150
-            )
-        )
+        button.setOnClickListener {
+
+            if(ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.RECORD_AUDIO
+                ) != PackageManager.PERMISSION_GRANTED){
+
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.RECORD_AUDIO),
+                    100
+                )
+
+            }else{
+
+                Toast.makeText(
+                    this,
+                    "🎤 Listening...",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+            }
+
+        }
 
 
-        layout.addView(
-            button,
-            LinearLayout.LayoutParams(
-                -1,
-                120
-            )
-        )
+        layout.addView(title)
+
+        layout.addView(button)
 
 
         setContentView(layout)
+
     }
+
 }
