@@ -1,0 +1,12 @@
+
+BUILD GUIDE
+
+1. Create GitHub repository.
+2. Upload this package.
+3. Add whisper.cpp files.
+4. Add model file.
+5. Go to Actions.
+6. Run Build VoiceAITranslator APK.
+7. Download Artifact.
+
+No Android Studio required on local machine.

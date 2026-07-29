@@ -1,0 +1,8 @@
+
+Put official whisper.cpp source files here:
+
+whisper.cpp
+whisper.h
+ggml.c
+ggml.h
+ggml-alloc.c

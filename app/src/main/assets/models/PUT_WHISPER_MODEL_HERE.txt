@@ -1,0 +1,6 @@
+
+Put Whisper model here:
+
+ggml-base.bin
+
+Recommended first model for Android testing.
