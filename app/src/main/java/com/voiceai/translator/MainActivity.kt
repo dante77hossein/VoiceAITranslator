@@ -20,15 +20,8 @@ class MainActivity : Activity() {
 
     private val SPEECH_REQUEST = 200
 
-
-    private val languages = arrayOf(
-        "فارسی",
-        "English",
-        "Deutsch",
-        "中文",
-        "العربية",
-        "Türkçe"
-    )
+    private val translationService =
+        TranslationService()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,75 +31,55 @@ class MainActivity : Activity() {
 
         val layout = LinearLayout(this)
 
-        layout.orientation = LinearLayout.VERTICAL
-        layout.gravity = Gravity.CENTER
-        layout.setPadding(40,40,40,40)
+        layout.orientation =
+            LinearLayout.VERTICAL
 
+        layout.gravity =
+            Gravity.CENTER
+
+        layout.setPadding(
+            40,
+            40,
+            40,
+            40
+        )
 
 
         val title = TextView(this)
 
-        title.text = "🎙 Voice AI Translator"
+        title.text =
+            "🎙 Voice AI Translator"
 
-        title.textSize = 26f
-
-        title.gravity = Gravity.CENTER
-
-
-
-        val inputLabel = TextView(this)
-
-        inputLabel.text = "زبان صحبت کردن"
+        title.textSize =
+            26f
 
 
-
-        val inputSpinner = Spinner(this)
-
-        inputSpinner.adapter =
-            ArrayAdapter(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                languages
-            )
-
-
-
-        val outputLabel = TextView(this)
-
-        outputLabel.text = "ترجمه به"
-
-
-
-        val outputSpinner = Spinner(this)
-
-        outputSpinner.adapter =
-            ArrayAdapter(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                languages
-            )
-
-
-
-        originalText = TextView(this)
+        originalText =
+            TextView(this)
 
         originalText.text =
             "متن اصلی..."
 
-        originalText.textSize = 18f
+
+        originalText.textSize =
+            20f
 
 
 
-        translatedText = TextView(this)
+        translatedText =
+            TextView(this)
 
         translatedText.text =
             "ترجمه..."
 
-        translatedText.textSize = 18f
+
+        translatedText.textSize =
+            20f
 
 
 
-        val button = Button(this)
+        val button =
+            Button(this)
 
         button.text =
             "🎤 START TRANSLATION"
@@ -116,12 +89,13 @@ class MainActivity : Activity() {
         button.setOnClickListener {
 
 
-            if(ContextCompat.checkSelfPermission(
+            if(
+                ContextCompat.checkSelfPermission(
                     this,
                     Manifest.permission.RECORD_AUDIO
                 )
-                != PackageManager.PERMISSION_GRANTED){
-
+                != PackageManager.PERMISSION_GRANTED
+            ){
 
                 ActivityCompat.requestPermissions(
                     this,
@@ -131,12 +105,9 @@ class MainActivity : Activity() {
                     100
                 )
 
-
             }else{
 
-                startSpeech(
-                    inputSpinner.selectedItem.toString()
-                )
+                startSpeech()
 
             }
 
@@ -146,20 +117,11 @@ class MainActivity : Activity() {
 
         layout.addView(title)
 
-        layout.addView(inputLabel)
-
-        layout.addView(inputSpinner)
-
-        layout.addView(outputLabel)
-
-        layout.addView(outputSpinner)
-
         layout.addView(originalText)
 
         layout.addView(translatedText)
 
         layout.addView(button)
-
 
 
         setContentView(layout)
@@ -168,7 +130,7 @@ class MainActivity : Activity() {
 
 
 
-    private fun startSpeech(language:String){
+    private fun startSpeech(){
 
 
         val intent =
@@ -183,42 +145,15 @@ class MainActivity : Activity() {
         )
 
 
-        val locale =
-            when(language){
-
-                "فارسی" ->
-                    "fa-IR"
-
-                "English" ->
-                    "en-US"
-
-                "Deutsch" ->
-                    "de-DE"
-
-                "中文" ->
-                    "zh-CN"
-
-                "العربية" ->
-                    "ar-SA"
-
-                "Türkçe" ->
-                    "tr-TR"
-
-                else ->
-                    "en-US"
-            }
-
-
-
         intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE,
-            locale
+            "fa-IR"
         )
 
 
         intent.putExtra(
             RecognizerIntent.EXTRA_PROMPT,
-            "Speak..."
+            "صحبت کنید..."
         )
 
 
@@ -228,7 +163,6 @@ class MainActivity : Activity() {
         )
 
     }
-
 
 
 
@@ -250,20 +184,30 @@ class MainActivity : Activity() {
             resultCode == RESULT_OK
         ){
 
-
-            val result =
+            val text =
                 data?.getStringArrayListExtra(
                     RecognizerIntent.EXTRA_RESULTS
-                )
+                )?.get(0)
+                    ?: ""
 
 
             originalText.text =
-                result?.get(0)
-                    ?: "No result"
+                "متن اصلی:\n$text"
 
 
-            translatedText.text =
-                "ترجمه در مرحله بعد اضافه می‌شود"
+
+            translationService.translate(
+                text,
+                "fa",
+                "en"
+            ){ result ->
+
+
+                translatedText.text =
+                    "ترجمه:\n$result"
+
+
+            }
 
         }
 
