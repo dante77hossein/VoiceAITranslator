@@ -25,11 +25,18 @@ jobs:
         run: chmod +x gradlew
 
 
+      - name: Check Gradle Wrapper
+        run: |
+          ls -la gradle/wrapper
+          jar tf gradle/wrapper/gradle-wrapper.jar | head -20
+
+
       - name: Build APK
         run: ./gradlew assembleDebug
 
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: VoiceAITranslator-APK
