@@ -1,11 +1,17 @@
 package com.voiceai.translator
 
+import android.os.Handler
+import android.os.Looper
+import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
-import org.json.JSONObject
 
 
 class TranslationService {
+
+
+    private val mainHandler =
+        Handler(Looper.getMainLooper())
 
 
     fun translate(
@@ -17,7 +23,6 @@ class TranslationService {
 
 
         Thread {
-
 
             try {
 
@@ -31,15 +36,17 @@ class TranslationService {
                             as HttpURLConnection
 
 
-                connection.requestMethod =
-                    "POST"
-
+                connection.requestMethod = "POST"
 
                 connection.setRequestProperty(
                     "Content-Type",
                     "application/json"
                 )
 
+
+                connection.connectTimeout = 10000
+
+                connection.readTimeout = 10000
 
                 connection.doOutput = true
 
@@ -48,24 +55,17 @@ class TranslationService {
                 val json =
                     JSONObject()
 
-
-                json.put(
-                    "q",
-                    text
-                )
-
+                json.put("q", text)
 
                 json.put(
                     "source",
                     source
                 )
 
-
                 json.put(
                     "target",
                     target
                 )
-
 
                 json.put(
                     "format",
@@ -92,25 +92,32 @@ class TranslationService {
 
 
 
-                val result =
+                val translated =
                     JSONObject(response)
-                        .getString(
-                            "translatedText"
+                        .optString(
+                            "translatedText",
+                            "No translation"
                         )
 
 
+                mainHandler.post {
 
-                runOnMain(callback, result)
+                    callback(translated)
+
+                }
 
 
 
-            } catch(e: Exception){
+            } catch (e: Exception) {
 
 
-                runOnMain(
-                    callback,
-                    "Translation error"
-                )
+                mainHandler.post {
+
+                    callback(
+                        "Translation failed: ${e.message}"
+                    )
+
+                }
 
 
             }
@@ -118,18 +125,7 @@ class TranslationService {
 
         }.start()
 
-    }
-
-
-
-    private fun runOnMain(
-        callback:(String)->Unit,
-        result:String
-    ){
-
-        callback(result)
 
     }
-
 
 }
