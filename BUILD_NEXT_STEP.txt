@@ -1,0 +1,10 @@
+After upload:
+
+1. Confirm gradlew exists in repository root.
+2. Confirm gradle/wrapper/gradle-wrapper.jar exists.
+3. Run GitHub Actions.
+
+If gradle-wrapper.jar is missing, generate it with:
+gradle wrapper
+
+from a Gradle installation.
