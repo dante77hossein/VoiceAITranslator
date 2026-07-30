@@ -4,7 +4,9 @@ package com.voiceai.translator
 import android.Manifest
 import android.app.Activity
 import android.os.Bundle
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.speech.RecognizerIntent
 import android.widget.*
 import android.view.Gravity
 import androidx.core.app.ActivityCompat
@@ -25,6 +27,17 @@ class MainActivity : Activity() {
 
     private val voiceFilter =
         VoiceFilterEngine()
+
+
+
+    private val SPEECH_REQUEST = 200
+
+
+
+    private val translationService =
+        TranslationService()
+
+
 
 
 
@@ -62,8 +75,10 @@ class MainActivity : Activity() {
             TextView(this)
 
 
+
         title.text =
             "🎙 Voice AI Translator"
+
 
 
         title.textSize =
@@ -77,8 +92,10 @@ class MainActivity : Activity() {
             TextView(this)
 
 
+
         originalText.text =
-            "Waiting for voice..."
+            "متن اصلی..."
+
 
 
         originalText.textSize =
@@ -92,12 +109,15 @@ class MainActivity : Activity() {
             TextView(this)
 
 
+
         translatedText.text =
-            "Translation..."
+            "ترجمه..."
+
 
 
         translatedText.textSize =
             20f
+
 
 
 
@@ -109,13 +129,15 @@ class MainActivity : Activity() {
 
 
         button.text =
-            "🎤 START LISTENING"
+            "🎤 START TRANSLATION"
+
 
 
 
 
 
         button.setOnClickListener {
+
 
 
             if(
@@ -127,6 +149,7 @@ class MainActivity : Activity() {
             ){
 
 
+
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(
@@ -134,6 +157,7 @@ class MainActivity : Activity() {
                     ),
                     100
                 )
+
 
 
             }else{
@@ -145,7 +169,11 @@ class MainActivity : Activity() {
             }
 
 
+
         }
+
+
+
 
 
 
@@ -163,7 +191,10 @@ class MainActivity : Activity() {
         setContentView(layout)
 
 
+
     }
+
+
 
 
 
@@ -183,42 +214,44 @@ class MainActivity : Activity() {
 
 
 
+
             voiceFilter.process(
                 audio
             ){ hasVoice, cleanAudio ->
 
 
 
-                runOnUiThread {
+
+                if(hasVoice){
 
 
 
-                    if(hasVoice){
-
-
-                        originalText.text =
-                            "🎤 Human voice detected"
-
-
-
-                    }else{
+                    runOnUiThread {
 
 
                         originalText.text =
-                            "🔇 Noise ignored"
-
+                            "🎤 Voice detected"
 
 
                     }
 
 
+
+                    startSpeechRecognition()
+
+
+
                 }
+
+
 
 
             }
 
 
+
         }
+
 
 
     }
@@ -228,12 +261,160 @@ class MainActivity : Activity() {
 
 
 
+
+
+    private fun startSpeechRecognition(){
+
+
+
+        audioRecorder.stop()
+
+
+
+
+        val intent =
+            Intent(
+                RecognizerIntent.ACTION_RECOGNIZE_SPEECH
+            )
+
+
+
+
+        intent.putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+        )
+
+
+
+
+        intent.putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE,
+            "fa-IR"
+        )
+
+
+
+
+        intent.putExtra(
+            RecognizerIntent.EXTRA_MAX_RESULTS,
+            3
+        )
+
+
+
+
+        intent.putExtra(
+            RecognizerIntent.EXTRA_PROMPT,
+            "صحبت کنید..."
+        )
+
+
+
+
+        startActivityForResult(
+            intent,
+            SPEECH_REQUEST
+        )
+
+
+
+    }
+
+
+
+
+
+
+
+
+    override fun onActivityResult(
+        requestCode:Int,
+        resultCode:Int,
+        data:Intent?
+    ){
+
+
+
+        super.onActivityResult(
+            requestCode,
+            resultCode,
+            data
+        )
+
+
+
+
+        if(
+            requestCode == SPEECH_REQUEST &&
+            resultCode == RESULT_OK
+        ){
+
+
+
+            val text =
+                data?.getStringArrayListExtra(
+                    RecognizerIntent.EXTRA_RESULTS
+                )?.get(0)
+                    ?: ""
+
+
+
+
+            originalText.text =
+                "متن اصلی:\n$text"
+
+
+
+
+
+            translationService.translate(
+                text,
+                "fa",
+                "en"
+            ){ result ->
+
+
+
+
+                runOnUiThread {
+
+
+
+                    translatedText.text =
+                        "ترجمه:\n$result"
+
+
+
+                }
+
+
+
+            }
+
+
+
+        }
+
+
+
+    }
+
+
+
+
+
+
+
     override fun onDestroy(){
+
+
 
         super.onDestroy()
 
 
         audioRecorder.stop()
+
 
 
     }
