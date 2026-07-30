@@ -21,16 +21,21 @@ class MainActivity : Activity() {
     private lateinit var translatedText: TextView
 
 
+    private lateinit var inputSpinner: Spinner
+    private lateinit var outputSpinner: Spinner
+
+
+
+    private val SPEECH_REQUEST = 200
+
+
+
     private val audioRecorder =
         AudioRecorder()
 
 
     private val voiceFilter =
         VoiceFilterEngine()
-
-
-
-    private val SPEECH_REQUEST = 200
 
 
 
@@ -41,7 +46,38 @@ class MainActivity : Activity() {
 
 
 
+    private val languages =
+        arrayOf(
+            "فارسی",
+            "English",
+            "Deutsch",
+            "中文",
+            "Türkçe",
+            "العربية"
+        )
+
+
+
+
+
+    private val languageCodes =
+        mapOf(
+
+            "فارسی" to "fa",
+            "English" to "en",
+            "Deutsch" to "de",
+            "中文" to "zh",
+            "Türkçe" to "tr",
+            "العربية" to "ar"
+
+        )
+
+
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
+
 
         super.onCreate(savedInstanceState)
 
@@ -71,6 +107,7 @@ class MainActivity : Activity() {
 
 
 
+
         val title =
             TextView(this)
 
@@ -88,6 +125,67 @@ class MainActivity : Activity() {
 
 
 
+
+        val inputLabel =
+            TextView(this)
+
+
+        inputLabel.text =
+            "زبان صحبت کردن"
+
+
+
+
+
+        inputSpinner =
+            Spinner(this)
+
+
+
+        inputSpinner.adapter =
+            ArrayAdapter(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                languages
+            )
+
+
+
+
+
+
+
+        val outputLabel =
+            TextView(this)
+
+
+
+        outputLabel.text =
+            "ترجمه به"
+
+
+
+
+
+
+
+        outputSpinner =
+            Spinner(this)
+
+
+
+        outputSpinner.adapter =
+            ArrayAdapter(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                languages
+            )
+
+
+
+
+
+
         originalText =
             TextView(this)
 
@@ -100,6 +198,8 @@ class MainActivity : Activity() {
 
         originalText.textSize =
             20f
+
+
 
 
 
@@ -123,6 +223,7 @@ class MainActivity : Activity() {
 
 
 
+
         val button =
             Button(this)
 
@@ -130,6 +231,7 @@ class MainActivity : Activity() {
 
         button.text =
             "🎤 START TRANSLATION"
+
 
 
 
@@ -149,7 +251,6 @@ class MainActivity : Activity() {
             ){
 
 
-
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(
@@ -157,7 +258,6 @@ class MainActivity : Activity() {
                     ),
                     100
                 )
-
 
 
             }else{
@@ -169,7 +269,6 @@ class MainActivity : Activity() {
             }
 
 
-
         }
 
 
@@ -177,8 +276,15 @@ class MainActivity : Activity() {
 
 
 
-
         layout.addView(title)
+
+        layout.addView(inputLabel)
+
+        layout.addView(inputSpinner)
+
+        layout.addView(outputLabel)
+
+        layout.addView(outputSpinner)
 
         layout.addView(originalText)
 
@@ -188,11 +294,14 @@ class MainActivity : Activity() {
 
 
 
+
+
         setContentView(layout)
 
 
 
     }
+
 
 
 
@@ -214,11 +323,9 @@ class MainActivity : Activity() {
 
 
 
-
             voiceFilter.process(
                 audio
             ){ hasVoice, cleanAudio ->
-
 
 
 
@@ -226,14 +333,7 @@ class MainActivity : Activity() {
 
 
 
-                    runOnUiThread {
-
-
-                        originalText.text =
-                            "🎤 Voice detected"
-
-
-                    }
+                    audioRecorder.stop()
 
 
 
@@ -245,13 +345,10 @@ class MainActivity : Activity() {
 
 
 
-
             }
 
 
-
         }
-
 
 
     }
@@ -267,16 +364,10 @@ class MainActivity : Activity() {
 
 
 
-        audioRecorder.stop()
-
-
-
-
         val intent =
             Intent(
                 RecognizerIntent.ACTION_RECOGNIZE_SPEECH
             )
-
 
 
 
@@ -287,12 +378,42 @@ class MainActivity : Activity() {
 
 
 
+        val selectedLanguage =
+            inputSpinner.selectedItem.toString()
+
+
+
+
+
+        val speechLanguage =
+            when(selectedLanguage){
+
+
+                "فارسی" -> "fa-IR"
+
+                "English" -> "en-US"
+
+                "Deutsch" -> "de-DE"
+
+                "中文" -> "zh-CN"
+
+                "Türkçe" -> "tr-TR"
+
+                "العربية" -> "ar-SA"
+
+                else -> "fa-IR"
+
+            }
+
+
+
+
+
 
         intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE,
-            "fa-IR"
+            speechLanguage
         )
-
 
 
 
@@ -303,12 +424,10 @@ class MainActivity : Activity() {
 
 
 
-
         intent.putExtra(
             RecognizerIntent.EXTRA_PROMPT,
-            "صحبت کنید..."
+            "Speak..."
         )
-
 
 
 
@@ -316,8 +435,6 @@ class MainActivity : Activity() {
             intent,
             SPEECH_REQUEST
         )
-
-
 
     }
 
@@ -355,8 +472,10 @@ class MainActivity : Activity() {
             val text =
                 data?.getStringArrayListExtra(
                     RecognizerIntent.EXTRA_RESULTS
-                )?.get(0)
+                )
+                    ?.get(0)
                     ?: ""
+
 
 
 
@@ -368,17 +487,38 @@ class MainActivity : Activity() {
 
 
 
+
+            val source =
+                languageCodes[
+                    inputSpinner.selectedItem.toString()
+                ]
+                    ?: "fa"
+
+
+
+
+
+            val target =
+                languageCodes[
+                    outputSpinner.selectedItem.toString()
+                ]
+                    ?: "en"
+
+
+
+
+
+
+
             translationService.translate(
                 text,
-                "fa",
-                "en"
+                source,
+                target
             ){ result ->
 
 
 
-
                 runOnUiThread {
-
 
 
                     translatedText.text =
@@ -394,12 +534,11 @@ class MainActivity : Activity() {
 
 
 
+
         }
 
 
-
     }
-
 
 
 
@@ -409,16 +548,13 @@ class MainActivity : Activity() {
     override fun onDestroy(){
 
 
-
         super.onDestroy()
 
 
         audioRecorder.stop()
 
 
-
     }
-
 
 
 }
