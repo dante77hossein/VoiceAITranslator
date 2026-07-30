@@ -5,7 +5,7 @@ import android.app.Activity
 import android.os.Bundle
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.speech.RecognizerIntent
+import android.speech.*
 import android.widget.*
 import android.view.Gravity
 import androidx.core.app.ActivityCompat
@@ -18,10 +18,12 @@ class MainActivity : Activity() {
     private lateinit var originalText: TextView
     private lateinit var translatedText: TextView
 
-    private val SPEECH_REQUEST = 200
-
     private val translationService =
         TranslationService()
+
+
+    private var speechRecognizer: SpeechRecognizer? = null
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,6 +54,7 @@ class MainActivity : Activity() {
 
         title.textSize =
             26f
+
 
 
         originalText =
@@ -107,20 +110,18 @@ class MainActivity : Activity() {
 
             }else{
 
-                startSpeech()
+                startListening()
 
             }
+
 
         }
 
 
 
         layout.addView(title)
-
         layout.addView(originalText)
-
         layout.addView(translatedText)
-
         layout.addView(button)
 
 
@@ -130,7 +131,80 @@ class MainActivity : Activity() {
 
 
 
-    private fun startSpeech(){
+
+    private fun startListening(){
+
+
+        speechRecognizer =
+            SpeechRecognizer.createSpeechRecognizer(this)
+
+
+
+        speechRecognizer?.setRecognitionListener(
+            object : RecognitionListener {
+
+
+                override fun onResults(bundle: Bundle?) {
+
+
+                    val results =
+                        bundle?.getStringArrayList(
+                            SpeechRecognizer.RESULTS_RECOGNITION
+                        )
+
+
+                    val text =
+                        results?.get(0) ?: ""
+
+
+
+                    showTranslation(text)
+
+
+                }
+
+
+
+                override fun onPartialResults(bundle: Bundle?) {
+
+
+                    val results =
+                        bundle?.getStringArrayList(
+                            SpeechRecognizer.RESULTS_RECOGNITION
+                        )
+
+
+                    val text =
+                        results?.get(0) ?: ""
+
+
+                    originalText.text =
+                        "متن اصلی:\n$text"
+
+
+                }
+
+
+
+                override fun onError(error:Int){
+
+                    originalText.text =
+                        "Speech error: $error"
+
+                }
+
+
+
+                override fun onReadyForSpeech(params:Bundle?){}
+                override fun onBeginningOfSpeech(){}
+                override fun onRmsChanged(rms:Float){}
+                override fun onBufferReceived(buffer:ByteArray?){}
+                override fun onEndOfSpeech(){}
+                override fun onEvent(event:Int,params:Bundle?){}
+
+            }
+        )
+
 
 
         val intent =
@@ -146,71 +220,57 @@ class MainActivity : Activity() {
 
 
         intent.putExtra(
+            RecognizerIntent.EXTRA_PARTIAL_RESULTS,
+            true
+        )
+
+
+        intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE,
             "fa-IR"
         )
 
 
-        intent.putExtra(
-            RecognizerIntent.EXTRA_PROMPT,
-            "صحبت کنید..."
-        )
+        speechRecognizer?.startListening(intent)
 
-
-        startActivityForResult(
-            intent,
-            SPEECH_REQUEST
-        )
 
     }
 
 
 
-    override fun onActivityResult(
-        requestCode:Int,
-        resultCode:Int,
-        data:Intent?
-    ){
 
-        super.onActivityResult(
-            requestCode,
-            resultCode,
-            data
-        )
+    private fun showTranslation(text:String){
 
 
-        if(
-            requestCode == SPEECH_REQUEST &&
-            resultCode == RESULT_OK
-        ){
-
-            val text =
-                data?.getStringArrayListExtra(
-                    RecognizerIntent.EXTRA_RESULTS
-                )?.get(0)
-                    ?: ""
-
-
-            originalText.text =
-                "متن اصلی:\n$text"
+        originalText.text =
+            "متن اصلی:\n$text"
 
 
 
-            translationService.translate(
-                text,
-                "fa",
-                "en"
-            ){ result ->
+        translationService.translate(
+            text,
+            "fa",
+            "en"
+        ){ result ->
 
 
-                translatedText.text =
-                    "ترجمه:\n$result"
+            translatedText.text =
+                "ترجمه:\n$result"
 
-
-            }
 
         }
 
     }
+
+
+
+    override fun onDestroy(){
+
+        super.onDestroy()
+
+        speechRecognizer?.destroy()
+
+    }
+
 
 }
