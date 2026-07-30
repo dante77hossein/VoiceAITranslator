@@ -23,7 +23,6 @@ class MainActivity : Activity() {
     private lateinit var translatedText: TextView
 
 
-    private lateinit var inputSpinner: Spinner
     private lateinit var outputSpinner: Spinner
 
 
@@ -40,13 +39,21 @@ class MainActivity : Activity() {
         AudioRecorder()
 
 
+
     private val voiceFilter =
         VoiceFilterEngine()
 
 
 
+
     private val translationService =
         TranslationService()
+
+
+
+    private val languageDetector =
+        LanguageDetector()
+
 
 
 
@@ -65,15 +72,19 @@ class MainActivity : Activity() {
 
 
 
+
     private val languages =
         arrayOf(
-            "فارسی",
+
             "English",
+            "فارسی",
             "Deutsch",
             "中文",
             "Türkçe",
             "العربية"
+
         )
+
 
 
 
@@ -81,8 +92,8 @@ class MainActivity : Activity() {
     private val languageCodes =
         mapOf(
 
-            "فارسی" to "fa",
             "English" to "en",
+            "فارسی" to "fa",
             "Deutsch" to "de",
             "中文" to "zh",
             "Türkçe" to "tr",
@@ -94,9 +105,12 @@ class MainActivity : Activity() {
 
 
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
+
         super.onCreate(savedInstanceState)
+
 
 
 
@@ -112,6 +126,7 @@ class MainActivity : Activity() {
 
 
                 }
+
 
             }
 
@@ -166,38 +181,6 @@ class MainActivity : Activity() {
 
 
 
-        val inputLabel =
-            TextView(this)
-
-
-
-        inputLabel.text =
-            "زبان صحبت کردن"
-
-
-
-
-
-
-
-        inputSpinner =
-            Spinner(this)
-
-
-
-        inputSpinner.adapter =
-            ArrayAdapter(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                languages
-            )
-
-
-
-
-
-
-
         val outputLabel =
             TextView(this)
 
@@ -211,9 +194,10 @@ class MainActivity : Activity() {
 
 
 
-
         outputSpinner =
             Spinner(this)
+
+
 
 
 
@@ -223,7 +207,6 @@ class MainActivity : Activity() {
                 android.R.layout.simple_spinner_dropdown_item,
                 languages
             )
-
 
 
 
@@ -242,7 +225,6 @@ class MainActivity : Activity() {
 
         originalText.textSize =
             20f
-
 
 
 
@@ -278,24 +260,21 @@ class MainActivity : Activity() {
 
 
 
-            if(conversationManager.conversationMode){
+            conversationButton.text =
+                if(conversationManager.conversationMode){
 
-
-                conversationButton.text =
                     "🔄 Conversation Mode ON"
 
+                }else{
 
-            }else{
-
-
-                conversationButton.text =
                     "🔄 Conversation Mode OFF"
 
-
-            }
+                }
 
 
         }
+
+
 
 
 
@@ -316,8 +295,10 @@ class MainActivity : Activity() {
         autoButton.setOnClickListener {
 
 
+
             continuousMode =
                 !continuousMode
+
 
 
 
@@ -349,6 +330,7 @@ class MainActivity : Activity() {
 
 
             }
+
 
 
         }
@@ -409,12 +391,7 @@ class MainActivity : Activity() {
 
 
 
-
         layout.addView(title)
-
-        layout.addView(inputLabel)
-
-        layout.addView(inputSpinner)
 
         layout.addView(outputLabel)
 
@@ -435,7 +412,11 @@ class MainActivity : Activity() {
         setContentView(layout)
 
 
+
     }
+
+
+
 
 
 
@@ -445,12 +426,17 @@ class MainActivity : Activity() {
     private fun startVoiceEngine(){
 
 
-        if(!conversationController.canListen()
-            && continuousMode){
+
+        if(
+            continuousMode &&
+            !conversationController.canListen()
+        ){
 
             return
 
         }
+
+
 
 
 
@@ -459,13 +445,18 @@ class MainActivity : Activity() {
 
 
 
+
+
         audioRecorder.start { audio ->
+
 
 
 
             voiceFilter.process(
                 audio
             ){ hasVoice, _ ->
+
+
 
 
 
@@ -476,7 +467,9 @@ class MainActivity : Activity() {
                     audioRecorder.stop()
 
 
+
                     startSpeechRecognition()
+
 
 
                 }
@@ -487,10 +480,13 @@ class MainActivity : Activity() {
 
 
 
+
         }
 
 
+
     }
+
 
 
 
@@ -502,10 +498,13 @@ class MainActivity : Activity() {
     private fun startSpeechRecognition(){
 
 
+
         val intent =
             Intent(
                 RecognizerIntent.ACTION_RECOGNIZE_SPEECH
             )
+
+
 
 
 
@@ -516,36 +515,15 @@ class MainActivity : Activity() {
 
 
 
-        val selected =
-            inputSpinner.selectedItem.toString()
 
 
-
-        val locale =
-            when(selected){
-
-                "فارسی" -> "fa-IR"
-
-                "English" -> "en-US"
-
-                "Deutsch" -> "de-DE"
-
-                "中文" -> "zh-CN"
-
-                "Türkçe" -> "tr-TR"
-
-                "العربية" -> "ar-SA"
-
-                else -> "fa-IR"
-
-            }
-
-
-
+        // زبان ورودی توسط LanguageDetector تشخیص داده می‌شود
         intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE,
-            locale
+            "en-US"
         )
+
+
 
 
 
@@ -556,26 +534,30 @@ class MainActivity : Activity() {
 
 
 
+
+
+        intent.putExtra(
+            RecognizerIntent.EXTRA_PROMPT,
+            "Speak..."
+        )
+
+
+
+
+
         startActivityForResult(
             intent,
             SPEECH_REQUEST
         )
 
 
+
     }
-
-
-
-
-
-
-
-    override fun onActivityResult(
+        override fun onActivityResult(
         requestCode:Int,
         resultCode:Int,
         data:Intent?
     ){
-
 
         super.onActivityResult(
             requestCode,
@@ -591,25 +573,30 @@ class MainActivity : Activity() {
         ){
 
 
+
             val text =
                 data?.getStringArrayListExtra(
                     RecognizerIntent.EXTRA_RESULTS
-                )?.get(0)
-                    ?: ""
+                )
+                ?.get(0)
+                ?: ""
 
-
-
-            originalText.text =
-                "متن اصلی:\n$text"
 
 
 
 
             val source =
-                languageCodes[
-                    inputSpinner.selectedItem.toString()
-                ]
-                ?: "fa"
+                languageDetector.detect(text)
+
+
+
+
+
+            originalText.text =
+                "Detected Language: $source\n\n$text"
+
+
+
 
 
 
@@ -623,6 +610,7 @@ class MainActivity : Activity() {
 
 
 
+
             translationService.translate(
                 text,
                 source,
@@ -631,7 +619,10 @@ class MainActivity : Activity() {
 
 
 
+
+
                 runOnUiThread {
+
 
 
 
@@ -640,10 +631,13 @@ class MainActivity : Activity() {
 
 
 
+
+
                     speakTranslation(
                         result,
                         target
                     )
+
 
 
                 }
@@ -654,7 +648,10 @@ class MainActivity : Activity() {
 
 
 
+
+
         }
+
 
 
     }
@@ -679,9 +676,10 @@ class MainActivity : Activity() {
 
 
 
+
         textToSpeech.setOnUtteranceProgressListener(
 
-            object:
+            object :
                 android.speech.tts.UtteranceProgressListener(){
 
 
@@ -689,8 +687,6 @@ class MainActivity : Activity() {
                 override fun onStart(
                     id:String?
                 ){
-
-
 
                 }
 
@@ -702,12 +698,16 @@ class MainActivity : Activity() {
                 ){
 
 
+
                     conversationController.isSpeaking =
                         false
 
 
 
+
+
                     if(continuousMode){
+
 
 
                         runOnUiThread {
@@ -734,11 +734,13 @@ class MainActivity : Activity() {
                 ){
 
 
+
                     conversationController.isSpeaking =
                         false
 
 
                 }
+
 
 
             }
@@ -749,29 +751,52 @@ class MainActivity : Activity() {
 
 
 
+
         val locale =
             when(language){
 
 
-                "fa" -> Locale("fa","IR")
 
-                "de" -> Locale.GERMAN
+                "fa" ->
+                    Locale("fa","IR")
 
-                "zh" -> Locale.CHINESE
 
-                "tr" -> Locale("tr","TR")
 
-                "ar" -> Locale("ar","SA")
+                "de" ->
+                    Locale.GERMAN
 
-                else -> Locale.US
+
+
+                "zh" ->
+                    Locale.CHINESE
+
+
+
+                "tr" ->
+                    Locale("tr","TR")
+
+
+
+                "ar" ->
+                    Locale("ar","SA")
+
+
+
+                else ->
+                    Locale.US
+
 
 
             }
 
 
 
+
+
+
         textToSpeech.language =
             locale
+
 
 
 
@@ -790,8 +815,8 @@ class MainActivity : Activity() {
         )
 
 
-    }
 
+    }
 
 
 
@@ -802,18 +827,24 @@ class MainActivity : Activity() {
     override fun onDestroy(){
 
 
+
         super.onDestroy()
+
 
 
         audioRecorder.stop()
 
 
+
         textToSpeech.stop()
+
 
         textToSpeech.shutdown()
 
 
+
     }
+
 
 
 }
