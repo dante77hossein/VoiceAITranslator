@@ -1,15 +1,18 @@
 package com.voiceai.translator
 
+
 import android.Manifest
 import android.app.Activity
 import android.os.Bundle
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.speech.*
+import android.speech.RecognizerIntent
 import android.widget.*
 import android.view.Gravity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.util.Locale
+
 
 
 class MainActivity : Activity() {
@@ -18,11 +21,12 @@ class MainActivity : Activity() {
     private lateinit var originalText: TextView
     private lateinit var translatedText: TextView
 
+
+    private val SPEECH_REQUEST = 200
+
+
     private val translationService =
         TranslationService()
-
-
-    private var speechRecognizer: SpeechRecognizer? = null
 
 
 
@@ -31,13 +35,18 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
 
 
-        val layout = LinearLayout(this)
+
+        val layout =
+            LinearLayout(this)
+
 
         layout.orientation =
             LinearLayout.VERTICAL
 
+
         layout.gravity =
             Gravity.CENTER
+
 
         layout.setPadding(
             40,
@@ -47,18 +56,24 @@ class MainActivity : Activity() {
         )
 
 
-        val title = TextView(this)
+
+        val title =
+            TextView(this)
+
 
         title.text =
             "🎙 Voice AI Translator"
+
 
         title.textSize =
             26f
 
 
 
+
         originalText =
             TextView(this)
+
 
         originalText.text =
             "متن اصلی..."
@@ -69,8 +84,11 @@ class MainActivity : Activity() {
 
 
 
+
+
         translatedText =
             TextView(this)
+
 
         translatedText.text =
             "ترجمه..."
@@ -81,11 +99,16 @@ class MainActivity : Activity() {
 
 
 
+
+
         val button =
             Button(this)
 
+
         button.text =
             "🎤 START TRANSLATION"
+
+
 
 
 
@@ -100,6 +123,7 @@ class MainActivity : Activity() {
                 != PackageManager.PERMISSION_GRANTED
             ){
 
+
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(
@@ -108,9 +132,12 @@ class MainActivity : Activity() {
                     100
                 )
 
+
             }else{
 
-                startListening()
+
+                startSpeech()
+
 
             }
 
@@ -119,91 +146,30 @@ class MainActivity : Activity() {
 
 
 
+
+
         layout.addView(title)
+
         layout.addView(originalText)
+
         layout.addView(translatedText)
+
         layout.addView(button)
 
 
+
         setContentView(layout)
+
 
     }
 
 
 
 
-    private fun startListening(){
-
-
-        speechRecognizer =
-            SpeechRecognizer.createSpeechRecognizer(this)
 
 
 
-        speechRecognizer?.setRecognitionListener(
-            object : RecognitionListener {
-
-
-                override fun onResults(bundle: Bundle?) {
-
-
-                    val results =
-                        bundle?.getStringArrayList(
-                            SpeechRecognizer.RESULTS_RECOGNITION
-                        )
-
-
-                    val text =
-                        results?.get(0) ?: ""
-
-
-
-                    showTranslation(text)
-
-
-                }
-
-
-
-                override fun onPartialResults(bundle: Bundle?) {
-
-
-                    val results =
-                        bundle?.getStringArrayList(
-                            SpeechRecognizer.RESULTS_RECOGNITION
-                        )
-
-
-                    val text =
-                        results?.get(0) ?: ""
-
-
-                    originalText.text =
-                        "متن اصلی:\n$text"
-
-
-                }
-
-
-
-                override fun onError(error:Int){
-
-                    originalText.text =
-                        "Speech error: $error"
-
-                }
-
-
-
-                override fun onReadyForSpeech(params:Bundle?){}
-                override fun onBeginningOfSpeech(){}
-                override fun onRmsChanged(rms:Float){}
-                override fun onBufferReceived(buffer:ByteArray?){}
-                override fun onEndOfSpeech(){}
-                override fun onEvent(event:Int,params:Bundle?){}
-
-            }
-        )
+    private fun startSpeech(){
 
 
 
@@ -213,10 +179,27 @@ class MainActivity : Activity() {
             )
 
 
+
         intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE_MODEL,
             RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
         )
+
+
+
+        // تشخیص زبان گوشی
+        intent.putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE,
+            Locale.getDefault()
+        )
+
+
+
+        intent.putExtra(
+            RecognizerIntent.EXTRA_MAX_RESULTS,
+            3
+        )
+
 
 
         intent.putExtra(
@@ -225,52 +208,125 @@ class MainActivity : Activity() {
         )
 
 
+
         intent.putExtra(
-            RecognizerIntent.EXTRA_LANGUAGE,
-            "fa-IR"
+            RecognizerIntent.EXTRA_PROMPT,
+            "Speak..."
         )
 
 
-        speechRecognizer?.startListening(intent)
 
 
-    }
+        try {
 
 
+            startActivityForResult(
+                intent,
+                SPEECH_REQUEST
+            )
 
 
-    private fun showTranslation(text:String){
+        }catch(e:Exception){
 
 
-        originalText.text =
-            "متن اصلی:\n$text"
-
-
-
-        translationService.translate(
-            text,
-            "fa",
-            "en"
-        ){ result ->
-
-
-            translatedText.text =
-                "ترجمه:\n$result"
+            Toast.makeText(
+                this,
+                "Speech not available",
+                Toast.LENGTH_SHORT
+            ).show()
 
 
         }
 
-    }
-
-
-
-    override fun onDestroy(){
-
-        super.onDestroy()
-
-        speechRecognizer?.destroy()
 
     }
+
+
+
+
+
+
+
+
+
+    override fun onActivityResult(
+        requestCode:Int,
+        resultCode:Int,
+        data:Intent?
+    ){
+
+
+        super.onActivityResult(
+            requestCode,
+            resultCode,
+            data
+        )
+
+
+
+
+        if(
+            requestCode == SPEECH_REQUEST &&
+            resultCode == RESULT_OK
+        ){
+
+
+            val result =
+                data?.getStringArrayListExtra(
+                    RecognizerIntent.EXTRA_RESULTS
+                )
+
+
+
+            val text =
+                result?.get(0)
+                    ?: ""
+
+
+
+            if(text.isNotEmpty()){
+
+
+                originalText.text =
+                    "متن اصلی:\n$text"
+
+
+
+
+                translationService.translate(
+                    text,
+                    "auto",
+                    "en"
+                ){ translated ->
+
+
+
+                    translatedText.text =
+                        "ترجمه:\n$translated"
+
+
+
+                }
+
+
+
+            }
+
+
+        }
+
+        else{
+
+
+            originalText.text =
+                "Speech not recognized"
+
+
+        }
+
+
+    }
+
 
 
 }
