@@ -2,33 +2,43 @@ package com.voiceai.translator
 
 import android.os.Handler
 import android.os.Looper
-import org.json.JSONObject
-import java.net.HttpURLConnection
 import java.net.URL
+import java.net.HttpURLConnection
+import java.net.URLEncoder
+import org.json.JSONObject
 
 
 class TranslationService {
 
 
-    private val mainHandler =
-        Handler(Looper.getMainLooper())
+    private val handler = Handler(Looper.getMainLooper())
 
 
     fun translate(
         text: String,
         source: String,
         target: String,
-        callback: (String) -> Unit
+        callback: (String)->Unit
     ) {
 
 
         Thread {
 
+
             try {
 
 
+                val encodedText =
+                    URLEncoder.encode(
+                        text,
+                        "UTF-8"
+                    )
+
+
                 val url =
-                    URL("https://translate.argosopentech.com/translate")
+                    URL(
+                        "https://api.mymemory.translated.net/get?q=$encodedText&langpair=$source|$target"
+                    )
 
 
                 val connection =
@@ -36,52 +46,11 @@ class TranslationService {
                             as HttpURLConnection
 
 
-                connection.requestMethod = "POST"
-
-                connection.setRequestProperty(
-                    "Content-Type",
-                    "application/json"
-                )
-
+                connection.requestMethod = "GET"
 
                 connection.connectTimeout = 10000
 
                 connection.readTimeout = 10000
-
-                connection.doOutput = true
-
-
-
-                val json =
-                    JSONObject()
-
-                json.put("q", text)
-
-                json.put(
-                    "source",
-                    source
-                )
-
-                json.put(
-                    "target",
-                    target
-                )
-
-                json.put(
-                    "format",
-                    "text"
-                )
-
-
-
-                connection.outputStream.use {
-
-                    it.write(
-                        json.toString()
-                            .toByteArray()
-                    )
-
-                }
 
 
 
@@ -92,15 +61,18 @@ class TranslationService {
 
 
 
-                val translated =
+                val json =
                     JSONObject(response)
-                        .optString(
-                            "translatedText",
-                            "No translation"
-                        )
 
 
-                mainHandler.post {
+                val translated =
+                    json
+                        .getJSONObject("responseData")
+                        .getString("translatedText")
+
+
+
+                handler.post {
 
                     callback(translated)
 
@@ -108,24 +80,23 @@ class TranslationService {
 
 
 
-            } catch (e: Exception) {
+            } catch(e:Exception){
 
 
-                mainHandler.post {
+                handler.post {
 
                     callback(
-                        "Translation failed: ${e.message}"
+                        "Translation error: ${e.message}"
                     )
 
                 }
-
 
             }
 
 
         }.start()
 
-
     }
+
 
 }
