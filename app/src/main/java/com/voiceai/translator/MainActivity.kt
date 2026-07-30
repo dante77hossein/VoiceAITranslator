@@ -7,10 +7,12 @@ import android.os.Bundle
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.speech.RecognizerIntent
+import android.speech.tts.TextToSpeech
 import android.widget.*
 import android.view.Gravity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.util.Locale
 
 
 
@@ -20,9 +22,11 @@ class MainActivity : Activity() {
     private lateinit var originalText: TextView
     private lateinit var translatedText: TextView
 
-
     private lateinit var inputSpinner: Spinner
     private lateinit var outputSpinner: Spinner
+
+
+    private lateinit var textToSpeech: TextToSpeech
 
 
 
@@ -83,6 +87,26 @@ class MainActivity : Activity() {
 
 
 
+        textToSpeech =
+            TextToSpeech(this){ status ->
+
+
+                if(status == TextToSpeech.SUCCESS){
+
+
+                    textToSpeech.language =
+                        Locale.US
+
+
+                }
+
+
+            }
+
+
+
+
+
         val layout =
             LinearLayout(this)
 
@@ -112,10 +136,8 @@ class MainActivity : Activity() {
             TextView(this)
 
 
-
         title.text =
             "🎙 Voice AI Translator"
-
 
 
         title.textSize =
@@ -325,7 +347,7 @@ class MainActivity : Activity() {
 
             voiceFilter.process(
                 audio
-            ){ hasVoice, cleanAudio ->
+            ){ hasVoice, _ ->
 
 
 
@@ -334,7 +356,6 @@ class MainActivity : Activity() {
 
 
                     audioRecorder.stop()
-
 
 
                     startSpeechRecognition()
@@ -409,7 +430,6 @@ class MainActivity : Activity() {
 
 
 
-
         intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE,
             speechLanguage
@@ -435,6 +455,7 @@ class MainActivity : Activity() {
             intent,
             SPEECH_REQUEST
         )
+
 
     }
 
@@ -487,7 +508,6 @@ class MainActivity : Activity() {
 
 
 
-
             val source =
                 languageCodes[
                     inputSpinner.selectedItem.toString()
@@ -518,11 +538,20 @@ class MainActivity : Activity() {
 
 
 
+
                 runOnUiThread {
+
 
 
                     translatedText.text =
                         "ترجمه:\n$result"
+
+
+
+                    speakTranslation(
+                        result,
+                        target
+                    )
 
 
 
@@ -531,7 +560,6 @@ class MainActivity : Activity() {
 
 
             }
-
 
 
 
@@ -545,6 +573,56 @@ class MainActivity : Activity() {
 
 
 
+
+
+    private fun speakTranslation(
+        text:String,
+        language:String
+    ){
+
+
+
+        val locale =
+            when(language){
+
+
+                "fa" -> Locale("fa","IR")
+
+                "de" -> Locale.GERMAN
+
+                "zh" -> Locale.CHINESE
+
+                "tr" -> Locale("tr","TR")
+
+                "ar" -> Locale("ar","SA")
+
+                else -> Locale.US
+
+            }
+
+
+
+        textToSpeech.language =
+            locale
+
+
+
+        textToSpeech.speak(
+            text,
+            TextToSpeech.QUEUE_FLUSH,
+            null,
+            "translation"
+        )
+
+
+    }
+
+
+
+
+
+
+
     override fun onDestroy(){
 
 
@@ -552,6 +630,11 @@ class MainActivity : Activity() {
 
 
         audioRecorder.stop()
+
+
+        textToSpeech.stop()
+
+        textToSpeech.shutdown()
 
 
     }
