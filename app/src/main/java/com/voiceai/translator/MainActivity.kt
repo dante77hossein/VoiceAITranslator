@@ -29,7 +29,6 @@ class MainActivity : Activity() {
     private lateinit var textToSpeech: TextToSpeech
 
 
-
     private val SPEECH_REQUEST = 200
 
 
@@ -48,6 +47,12 @@ class MainActivity : Activity() {
 
 
 
+    private val conversationManager =
+        ConversationManager()
+
+
+    private var conversationMode = false
+
 
 
     private val languages =
@@ -59,8 +64,6 @@ class MainActivity : Activity() {
             "Türkçe",
             "العربية"
         )
-
-
 
 
 
@@ -79,9 +82,7 @@ class MainActivity : Activity() {
 
 
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
-
 
         super.onCreate(savedInstanceState)
 
@@ -90,20 +91,14 @@ class MainActivity : Activity() {
         textToSpeech =
             TextToSpeech(this){ status ->
 
-
                 if(status == TextToSpeech.SUCCESS){
-
 
                     textToSpeech.language =
                         Locale.US
 
-
                 }
 
-
             }
-
-
 
 
 
@@ -111,15 +106,12 @@ class MainActivity : Activity() {
             LinearLayout(this)
 
 
-
         layout.orientation =
             LinearLayout.VERTICAL
 
 
-
         layout.gravity =
             Gravity.CENTER
-
 
 
         layout.setPadding(
@@ -128,7 +120,6 @@ class MainActivity : Activity() {
             40,
             40
         )
-
 
 
 
@@ -146,11 +137,8 @@ class MainActivity : Activity() {
 
 
 
-
-
         val inputLabel =
             TextView(this)
-
 
         inputLabel.text =
             "زبان صحبت کردن"
@@ -158,10 +146,8 @@ class MainActivity : Activity() {
 
 
 
-
         inputSpinner =
             Spinner(this)
-
 
 
         inputSpinner.adapter =
@@ -174,12 +160,8 @@ class MainActivity : Activity() {
 
 
 
-
-
-
         val outputLabel =
             TextView(this)
-
 
 
         outputLabel.text =
@@ -188,12 +170,8 @@ class MainActivity : Activity() {
 
 
 
-
-
-
         outputSpinner =
             Spinner(this)
-
 
 
         outputSpinner.adapter =
@@ -206,23 +184,15 @@ class MainActivity : Activity() {
 
 
 
-
-
         originalText =
             TextView(this)
-
 
 
         originalText.text =
             "متن اصلی..."
 
-
-
         originalText.textSize =
             20f
-
-
-
 
 
 
@@ -231,16 +201,60 @@ class MainActivity : Activity() {
             TextView(this)
 
 
-
         translatedText.text =
             "ترجمه..."
-
-
 
         translatedText.textSize =
             20f
 
 
+
+
+        val conversationButton =
+            Button(this)
+
+
+        conversationButton.text =
+            "🔄 Conversation Mode OFF"
+
+
+
+        conversationButton.setOnClickListener {
+
+
+            conversationMode =
+                !conversationMode
+
+
+            conversationManager.conversationMode =
+                conversationMode
+
+
+
+            if(conversationMode){
+
+                conversationButton.text =
+                    "🔄 Conversation Mode ON"
+
+
+                Toast.makeText(
+                    this,
+                    "Conversation Mode Enabled",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+
+            }else{
+
+
+                conversationButton.text =
+                    "🔄 Conversation Mode OFF"
+
+
+            }
+
+
+        }
 
 
 
@@ -250,18 +264,13 @@ class MainActivity : Activity() {
             Button(this)
 
 
-
         button.text =
             "🎤 START TRANSLATION"
 
 
 
 
-
-
-
         button.setOnClickListener {
-
 
 
             if(
@@ -312,14 +321,13 @@ class MainActivity : Activity() {
 
         layout.addView(translatedText)
 
+        layout.addView(conversationButton)
+
         layout.addView(button)
 
 
 
-
-
         setContentView(layout)
-
 
 
     }
@@ -329,11 +337,7 @@ class MainActivity : Activity() {
 
 
 
-
-
-
     private fun startVoiceEngine(){
-
 
 
         originalText.text =
@@ -354,16 +358,13 @@ class MainActivity : Activity() {
                 if(hasVoice){
 
 
-
                     audioRecorder.stop()
 
 
                     startSpeechRecognition()
 
 
-
                 }
-
 
 
             }
@@ -380,9 +381,7 @@ class MainActivity : Activity() {
 
 
 
-
     private fun startSpeechRecognition(){
-
 
 
         val intent =
@@ -399,16 +398,13 @@ class MainActivity : Activity() {
 
 
 
-        val selectedLanguage =
+        val selected =
             inputSpinner.selectedItem.toString()
 
 
 
-
-
-        val speechLanguage =
-            when(selectedLanguage){
-
+        val locale =
+            when(selected){
 
                 "فارسی" -> "fa-IR"
 
@@ -428,11 +424,9 @@ class MainActivity : Activity() {
 
 
 
-
-
         intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE,
-            speechLanguage
+            locale
         )
 
 
@@ -440,13 +434,6 @@ class MainActivity : Activity() {
         intent.putExtra(
             RecognizerIntent.EXTRA_MAX_RESULTS,
             3
-        )
-
-
-
-        intent.putExtra(
-            RecognizerIntent.EXTRA_PROMPT,
-            "Speak..."
         )
 
 
@@ -472,14 +459,11 @@ class MainActivity : Activity() {
         data:Intent?
     ){
 
-
-
         super.onActivityResult(
             requestCode,
             resultCode,
             data
         )
-
 
 
 
@@ -494,10 +478,8 @@ class MainActivity : Activity() {
                 data?.getStringArrayListExtra(
                     RecognizerIntent.EXTRA_RESULTS
                 )
-                    ?.get(0)
-                    ?: ""
-
-
+                ?.get(0)
+                ?: ""
 
 
 
@@ -508,23 +490,41 @@ class MainActivity : Activity() {
 
 
 
-            val source =
-                languageCodes[
-                    inputSpinner.selectedItem.toString()
-                ]
+            val source:String
+
+            val target:String
+
+
+
+            if(conversationMode){
+
+
+                source =
+                    conversationManager.getSourceLanguage()
+
+
+                target =
+                    conversationManager.getTargetLanguage()
+
+
+            }else{
+
+
+                source =
+                    languageCodes[
+                        inputSpinner.selectedItem.toString()
+                    ]
                     ?: "fa"
 
 
 
-
-
-            val target =
-                languageCodes[
-                    outputSpinner.selectedItem.toString()
-                ]
+                target =
+                    languageCodes[
+                        outputSpinner.selectedItem.toString()
+                    ]
                     ?: "en"
 
-
+            }
 
 
 
@@ -538,9 +538,7 @@ class MainActivity : Activity() {
 
 
 
-
                 runOnUiThread {
-
 
 
                     translatedText.text =
@@ -555,12 +553,18 @@ class MainActivity : Activity() {
 
 
 
+                    if(conversationMode){
+
+                        conversationManager.switchSpeaker()
+
+                    }
+
+
+
                 }
 
 
-
             }
-
 
 
         }
@@ -579,7 +583,6 @@ class MainActivity : Activity() {
         text:String,
         language:String
     ){
-
 
 
         val locale =
@@ -602,8 +605,10 @@ class MainActivity : Activity() {
 
 
 
+
         textToSpeech.language =
             locale
+
 
 
 
@@ -622,9 +627,7 @@ class MainActivity : Activity() {
 
 
 
-
     override fun onDestroy(){
-
 
         super.onDestroy()
 
