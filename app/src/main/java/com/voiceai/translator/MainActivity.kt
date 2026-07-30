@@ -11,7 +11,6 @@ import android.widget.*
 import android.view.Gravity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import java.util.Locale
 
 
 
@@ -67,6 +66,7 @@ class MainActivity : Activity() {
 
         title.textSize =
             26f
+
 
 
 
@@ -169,8 +169,8 @@ class MainActivity : Activity() {
 
 
 
-    private fun startSpeech(){
 
+    private fun startSpeech(){
 
 
         val intent =
@@ -187,10 +187,10 @@ class MainActivity : Activity() {
 
 
 
-        // تشخیص زبان گوشی
+        // زبان ورودی فارسی
         intent.putExtra(
             RecognizerIntent.EXTRA_LANGUAGE,
-            Locale.getDefault()
+            "fa-IR"
         )
 
 
@@ -203,17 +203,9 @@ class MainActivity : Activity() {
 
 
         intent.putExtra(
-            RecognizerIntent.EXTRA_PARTIAL_RESULTS,
-            true
-        )
-
-
-
-        intent.putExtra(
             RecognizerIntent.EXTRA_PROMPT,
-            "Speak..."
+            "فارسی صحبت کنید..."
         )
-
 
 
 
@@ -231,7 +223,7 @@ class MainActivity : Activity() {
 
             Toast.makeText(
                 this,
-                "Speech not available",
+                "Speech recognition unavailable",
                 Toast.LENGTH_SHORT
             ).show()
 
@@ -264,14 +256,13 @@ class MainActivity : Activity() {
 
 
 
-
         if(
             requestCode == SPEECH_REQUEST &&
             resultCode == RESULT_OK
         ){
 
 
-            val result =
+            val results =
                 data?.getStringArrayListExtra(
                     RecognizerIntent.EXTRA_RESULTS
                 )
@@ -279,50 +270,44 @@ class MainActivity : Activity() {
 
 
             val text =
-                result?.get(0)
+                results?.get(0)
                     ?: ""
 
 
 
-            if(text.isNotEmpty()){
-
-
-                originalText.text =
-                    "متن اصلی:\n$text"
+            originalText.text =
+                "متن اصلی:\n$text"
 
 
 
 
-                translationService.translate(
-                    text,
-                    "auto",
-                    "en"
-                ){ translated ->
+            translationService.translate(
+                text,
+                "fa",
+                "en"
+            ){ result ->
 
 
 
-                    translatedText.text =
-                        "ترجمه:\n$translated"
-
-
-
-                }
+                translatedText.text =
+                    "ترجمه:\n$result"
 
 
 
             }
 
 
-        }
 
+        }
         else{
 
 
             originalText.text =
-                "Speech not recognized"
+                "صدایی تشخیص داده نشد"
 
 
         }
+
 
 
     }
